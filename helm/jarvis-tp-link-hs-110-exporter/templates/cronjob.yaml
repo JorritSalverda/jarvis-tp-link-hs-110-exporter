@@ -56,7 +56,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: bq-init
-                  name: {{ include "jarvis-alpha-innotec-exporter.fullname" . }}
+                  name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
             - name: BQ_PROJECT_ID
               valueFrom:
                 configMapKeyRef:

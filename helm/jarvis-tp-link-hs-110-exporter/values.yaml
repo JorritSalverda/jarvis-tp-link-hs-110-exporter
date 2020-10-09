@@ -15,11 +15,8 @@ config:
   bqTable: jarvis_measurements
   configYaml: |
     location: My Home
-    entityType: ENTITY_TYPE_TARIFF
-    entityName: Sagemcom XS210
-    sampleType: SAMPLE_TYPE_ELECTRICITY_CONSUMPTION
-    metricType: METRIC_TYPE_COUNTER
-    valueMultiplier: 3600
+    entityType: ENTITY_TYPE_DEVICE
+    entityName: TP-Link HS110
 
 secret:
   gcpServiceAccountKeyfile: '{}'

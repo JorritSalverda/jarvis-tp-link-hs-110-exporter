@@ -10,9 +10,4 @@ type Config struct {
 	// default jarvis config for sample
 	EntityType contractsv1.EntityType `yaml:"entityType"`
 	EntityName string                 `yaml:"entityName"`
-	SampleType contractsv1.SampleType `yaml:"sampleType"`
-	MetricType contractsv1.MetricType `yaml:"metricType"`
-
-	// modbus specific config for sample
-	ValueMultiplier float64 `yaml:"valueMultiplier"`
 }

@@ -22,7 +22,5 @@ func TestReadConfigFromFile(t *testing.T) {
 		assert.Equal(t, "My Home", config.Location)
 		assert.Equal(t, contractsv1.EntityType_ENTITY_TYPE_DEVICE, config.EntityType)
 		assert.Equal(t, "TP-Link HS110", config.EntityName)
-		assert.Equal(t, contractsv1.SampleType_SAMPLE_TYPE_ELECTRICITY_CONSUMPTION, config.SampleType)
-		assert.Equal(t, contractsv1.MetricType_METRIC_TYPE_COUNTER, config.MetricType)
 	})
 }

@@ -61,18 +61,25 @@ func (c *client) GetMeasurement(ctx context.Context, config apiv1.Config, lastMe
 		} else {
 
 			for _, device := range devices {
-				// init sample from config
-				sample := contractsv1.Sample{
+				// counter
+				measurement.Samples = append(measurement.Samples, &contractsv1.Sample{
 					EntityType: config.EntityType,
 					EntityName: config.EntityName,
-					SampleType: config.SampleType,
+					SampleType: contractsv1.SampleType_SAMPLE_TYPE_ELECTRICITY_CONSUMPTION,
 					SampleName: device.Info.System.Info.Alias,
-					MetricType: config.MetricType,
-				}
+					MetricType: contractsv1.MetricType_METRIC_TYPE_COUNTER,
+					Value:      float64(device.Info.EMeter.RealTime.TotalWattHour) * 3600,
+				})
 
-				sample.Value = float64(device.Info.EMeter.RealTime.TotalWattHour) * config.ValueMultiplier
-
-				measurement.Samples = append(measurement.Samples, &sample)
+				// gauge
+				measurement.Samples = append(measurement.Samples, &contractsv1.Sample{
+					EntityType: config.EntityType,
+					EntityName: config.EntityName,
+					SampleType: contractsv1.SampleType_SAMPLE_TYPE_ELECTRICITY_CONSUMPTION,
+					SampleName: device.Info.System.Info.Alias,
+					MetricType: contractsv1.MetricType_METRIC_TYPE_GAUGE,
+					Value:      float64(device.Info.EMeter.RealTime.PowerMilliWatt) / 1000,
+				})
 			}
 		}
 	}

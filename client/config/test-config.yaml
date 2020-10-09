@@ -1,0 +1,6 @@
+location: My Home
+entityType: ENTITY_TYPE_DEVICE
+entityName: TP-Link HS110
+sampleType: SAMPLE_TYPE_ELECTRICITY_CONSUMPTION
+metricType: METRIC_TYPE_COUNTER
+valueMultiplier: 3600

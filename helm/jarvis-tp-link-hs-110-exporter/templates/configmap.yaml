@@ -5,6 +5,7 @@ metadata:
   labels:
     {{- include "jarvis-tp-link-hs-110-exporter.labels" . | nindent 4 }}
 data:
+  timeout-seconds: {{ .Values.config.timeoutSeconds | quote }}
   bq-enable: {{ .Values.config.bqEnable | quote }}
   bq-project-id: {{ .Values.config.bqProjectID | quote }}
   bq-dataset: {{ .Values.config.bqDataset | quote }}

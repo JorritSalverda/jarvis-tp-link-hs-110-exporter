@@ -27,12 +27,15 @@ type Client interface {
 }
 
 // NewClient returns new modbus.Client
-func NewClient(ctx context.Context) (Client, error) {
+func NewClient(ctx context.Context, timeout int) (Client, error) {
 
-	return &client{}, nil
+	return &client{
+		timeout: timeout,
+	}, nil
 }
 
 type client struct {
+	timeout int
 }
 
 func (c *client) GetMeasurement(ctx context.Context, config apiv1.Config, lastMeasurement *contractsv1.Measurement) (measurement contractsv1.Measurement, err error) {
@@ -46,13 +49,13 @@ func (c *client) GetMeasurement(ctx context.Context, config apiv1.Config, lastMe
 	}
 
 	log.Info().Msg("Discovering devices...")
-	devices, err := c.discoverDevices(3)
+	devices, err := c.discoverDevices(c.timeout)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed discovering devices")
 	} else {
 		log.Info().Interface("devices", devices).Msg("Retrieved devices...")
 
-		devices, err = c.getUsageForAllDevices(devices, 3)
+		devices, err = c.getUsageForAllDevices(devices, c.timeout)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed retrieving metrics for devices")
 		} else {

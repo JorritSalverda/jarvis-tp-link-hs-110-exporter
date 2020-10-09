@@ -26,6 +26,8 @@ var (
 	goVersion = runtime.Version()
 
 	// application specific config
+	timeoutSeconds = kingpin.Flag("timeout-seconds", "Timeout in seconds waiting for responses from devices").Envar("TIMEOUT_SECONDS").Required().Int()
+
 	bigqueryEnable    = kingpin.Flag("bigquery-enable", "Toggle to enable or disable bigquery integration").Default("true").OverrideDefaultFromEnvar("BQ_ENABLE").Bool()
 	bigqueryProjectID = kingpin.Flag("bigquery-project-id", "Google Cloud project id that contains the BigQuery dataset").Envar("BQ_PROJECT_ID").Required().String()
 	bigqueryDataset   = kingpin.Flag("bigquery-dataset", "Name of the BigQuery dataset").Envar("BQ_DATASET").Required().String()
@@ -88,7 +90,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed creating state client")
 	}
 
-	tplinkClient, err := tplink.NewClient(ctx)
+	tplinkClient, err := tplink.NewClient(ctx, *timeoutSeconds)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed creating tp-link client")
 	}

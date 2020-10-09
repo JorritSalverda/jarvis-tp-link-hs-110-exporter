@@ -42,6 +42,11 @@ spec:
             env:
             - name: ESTAFETTE_LOG_FORMAT
               value: {{ .Values.logFormat }}
+            - name: TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  key: timeout-seconds
+                  name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
             - name: BQ_ENABLE
               valueFrom:
                 configMapKeyRef:

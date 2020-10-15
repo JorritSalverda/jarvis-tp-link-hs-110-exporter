@@ -226,6 +226,7 @@ func (c *client) sanitizeSamples(currentSamples, lastSamples []*contractsv1.Samp
 				cs.SampleName == ls.SampleName &&
 				cs.MetricType == cs.MetricType {
 				if cs.MetricType == contractsv1.MetricType_METRIC_TYPE_COUNTER && cs.Value/ls.Value > 1.1 {
+					sanitize = true
 					log.Warn().Msgf("Value for %v is more than 10 percent larger than the last sampled value %v, keeping previous value instead", cs, ls.Value)
 					sanitizeSamples = append(sanitizeSamples, ls)
 				}

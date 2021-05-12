@@ -6,8 +6,6 @@ use serde_json;
 use std::env;
 use std::error::Error;
 use std::net::{SocketAddr, UdpSocket};
-use std::sync::mpsc;
-use std::thread;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -134,6 +132,8 @@ impl HS110Client {
             let response = self.decrypt(response);
             let response: DeviceInfoResponse = serde_json::from_slice(&response)?;
 
+            println!("{:#?}", &response);
+
             devices.push(response);
 
             if start.elapsed() > timeout {
@@ -145,31 +145,26 @@ impl HS110Client {
     }
 
     fn encrypt(&self, input: Vec<u8>) -> Vec<u8> {
-        let key = b"\xAB";
+        let mut key = b"\xab"[0];
+        let mut output: Vec<u8> = vec![0; input.len()];
+        for (i, item) in input.iter().enumerate() {
+          output[i] = item ^ key;
+          key = output[i];
+        }
 
-        // s := string(input)
-
-        // key := byte(0xAB)
-        // b := make(Vec<u8>, len(s))
-        // for i := 0; i < len(s); i++ {
-        //     b[i] = s[i] ^ key
-        //     key = b[i]
-        // }
-        // return b
-        vec![]
+        output
     }
 
-    fn decrypt(&self, b: Vec<u8>) -> Vec<u8> {
-        // k := byte(0xAB)
-        // var newKey byte
-        // for i := 0; i < len(b); i++ {
-        //     newKey = b[i]
-        //     b[i] = b[i] ^ k
-        //     k = newKey
-        // }
+    fn decrypt(&self, input: Vec<u8>) -> Vec<u8> {
+      let mut key = b"\xab"[0];
+      let mut output: Vec<u8> = vec![0; input.len()];
+      for (i, item) in input.iter().enumerate() {
+        let new_key = *item;
+        output[i] = item ^ key;
+        key = new_key;
+      }
 
-        // return b
-        vec![]
+      output
     }
 
     fn sanitize_samples(
@@ -210,7 +205,8 @@ impl HS110Client {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct DeviceInfoRequest {
     #[serde(rename = "system")]
     system: System,
@@ -218,7 +214,8 @@ struct DeviceInfoRequest {
     e_meter: EMeter,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct DeviceInfoResponse {
     #[serde(rename = "system")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -228,85 +225,89 @@ struct DeviceInfoResponse {
     e_meter: Option<EMeter>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct System {
     #[serde(rename = "get_sysinfo")]
     info: SystemInfo,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct EMeter {
     #[serde(rename = "get_realtime")]
     real_time: RealTimeEnergy,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct SystemInfo {
-    #[serde(rename = "active_mode")]
-    mode: String,
-    #[serde(rename = "alias")]
+    // #[serde(rename = "active_mode")]
+    // mode: String,
+    #[serde(rename = "alias", skip_serializing)]
     alias: String,
-    #[serde(rename = "dev_name")]
-    product: String,
-    #[serde(rename = "device_id")]
-    device_id: String,
-    #[serde(rename = "err_code")]
-    error_code: i32,
-    #[serde(rename = "feature")]
-    features: String,
-    #[serde(rename = "fwId")]
-    firmware_id: String,
-    #[serde(rename = "hwId")]
-    hardware_id: String,
-    #[serde(rename = "hw_ver")]
-    hardware_version: String,
-    #[serde(rename = "icon_hash")]
-    icon_hash: String,
-    #[serde(rename = "latitude")]
-    gps_latitude: f32,
-    #[serde(rename = "longitude")]
-    gps_longitude: f32,
-    #[serde(rename = "led_off")]
-    led_off: u8,
-    #[serde(rename = "mac")]
-    mac: String,
-    #[serde(rename = "model")]
-    model: String,
-    #[serde(rename = "oemId")]
-    oem_id: String,
-    #[serde(rename = "on_time")]
-    on_time: u32,
-    #[serde(rename = "relay_state")]
-    relay_on: u8,
-    #[serde(rename = "rssi")]
-    rssi: i32,
-    #[serde(rename = "sw_ver")]
-    software_version: String,
-    #[serde(rename = "type")]
-    product_type: String,
-    #[serde(rename = "updating")]
-    updating: u8,
+    // #[serde(rename = "dev_name")]
+    // product: String,
+    // #[serde(rename = "device_id")]
+    // device_id: String,
+    // #[serde(rename = "err_code")]
+    // error_code: i32,
+    // #[serde(rename = "feature")]
+    // features: String,
+    // #[serde(rename = "fwId")]
+    // firmware_id: String,
+    // #[serde(rename = "hwId")]
+    // hardware_id: String,
+    // #[serde(rename = "hw_ver")]
+    // hardware_version: String,
+    // #[serde(rename = "icon_hash")]
+    // icon_hash: String,
+    // #[serde(rename = "latitude")]
+    // gps_latitude: f32,
+    // #[serde(rename = "longitude")]
+    // gps_longitude: f32,
+    // #[serde(rename = "led_off")]
+    // led_off: u8,
+    // #[serde(rename = "mac")]
+    // mac: String,
+    // #[serde(rename = "model")]
+    // model: String,
+    // #[serde(rename = "oemId")]
+    // oem_id: String,
+    // #[serde(rename = "on_time")]
+    // on_time: u32,
+    // #[serde(rename = "relay_state")]
+    // relay_on: u8,
+    // #[serde(rename = "rssi")]
+    // rssi: i32,
+    // #[serde(rename = "sw_ver")]
+    // software_version: String,
+    // #[serde(rename = "type")]
+    // product_type: String,
+    // #[serde(rename = "updating")]
+    // updating: u8,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+#[serde(default)]
 struct RealTimeEnergy {
-    #[serde(rename = "err_code")]
-    error_code: u8,
-    #[serde(rename = "power_mw")]
+    // #[serde(rename = "err_code")]
+    // error_code: u8,
+    #[serde(rename = "power_mw", skip_serializing)]
     power_milli_watt: f64,
-    #[serde(rename = "voltage_mv")]
-    voltage_milli_volt: f64,
-    #[serde(rename = "current_ma")]
-    current_milli_ampere: f64,
-    #[serde(rename = "total_wh")]
+    // #[serde(rename = "voltage_mv")]
+    // voltage_milli_volt: f64,
+    // #[serde(rename = "current_ma")]
+    // current_milli_ampere: f64,
+    #[serde(rename = "total_wh", skip_serializing)]
     total_watt_hour: f64,
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::str;
+    use crate::model::{Config, EntityType};
 
     #[test]
     fn encrypt_device_info_request() {
@@ -318,21 +319,37 @@ mod tests {
         // act
         let request = hs110_client.encrypt(request);
   
-        assert_eq!(b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\uf536Ѵ\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8ʭȼ\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2", request.to_string());
+        assert_eq!(b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\xef\x94\xb6\xd1\xb4\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8\xca\xad\xc8\xbc\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2".to_vec(), request);
     }
 
     #[test]
     fn decrypt_device_info_request() {
         let hs110_client = HS110Client::new(HS110ClientConfig::new(2).unwrap());
   
-        let response = b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\uf536Ѵ\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8ʭȼ\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2";
+        let response = b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\xef\x94\xb6\xd1\xb4\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8\xca\xad\xc8\xbc\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2".to_vec();
 
         // act
         let response = hs110_client.decrypt(response);
 
         assert_eq!("{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}", str::from_utf8(&response).unwrap());
-        let response = serde_json::from_slice(&response).unwrap();
+        let response: DeviceInfoRequest = serde_json::from_slice(&response).unwrap();
 
-        assert_eq!(DeviceInfoRequest{..Default::default()}, response);
+        assert_eq!("".to_string(), response.system.info.alias);
+    }
+
+    #[test]
+    #[ignore]
+    fn get_measurement() {
+        let hs110_client = HS110Client::new(HS110ClientConfig::new(10).unwrap());
+        let config = Config{
+          location: "My Home".to_string(),
+          entity_type: EntityType::Device,
+          entity_name: "TP-Link HS110".to_string(),
+        };
+
+        // act
+        let measurement = hs110_client.get_measurement(config, Option::None).unwrap();
+
+        assert_eq!(40, measurement.samples.len());
     }
 }

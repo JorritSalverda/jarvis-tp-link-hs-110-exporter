@@ -1,12 +1,15 @@
 use crate::model::{Config, Measurement, MetricType, Sample, SampleType};
 
 use std::net::{SocketAddr, UdpSocket};
+use std::sync::mpsc;
+use std::thread;
 use chrono::Utc;
 use std::env;
 use std::error::Error;
 use std::time::Duration;
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
+use serde_json;
 
 pub struct HS110ClientConfig {
     timeout_seconds: u64,
@@ -54,7 +57,6 @@ impl HS110Client {
         let devices = self.discover_devices()?;
 
         for device in devices.iter() {
-
             match device.info {
                 Some(info) => {
                     match info.system {
@@ -89,7 +91,6 @@ impl HS110Client {
                 },
                 None => ()
             }
-
         }
 
         match last_measurement {
@@ -108,10 +109,6 @@ impl HS110Client {
         
         let devices = Vec::new();
 
-        let request = DeviceInfoRequest{
-            
-        };
-
         let broadcast_address: SocketAddr = "255.255.255.255:9999".parse()?;
         let from_address: SocketAddr = "0.0.0.0:8755".parse()?;
 
@@ -119,33 +116,26 @@ impl HS110Client {
         socket.set_read_timeout(Some(Duration::new(self.config.timeout_seconds.clone(), 0)))?;
         socket.set_broadcast(true)?; 
 
-        let mut write_buf: Vec<u8> = vec![0; 2048];
+        // set up listener for device info responses
+        let (tx, rx) = mpsc::channel();
+        thread::spawn(move || {
+          loop {
+            let read_buffer : Vec<u8> = vec![];
+            match socket.recv_from(&mut read_buffer) {
+              Ok((size, addr)) => {
+                self.discovered(tx, addr, size, read_buffer);
+              },
+              Err(_) => break,
+            }
+          }
+        });
 
-        socket.send_to(&write_buf, broadcast_address);
+        // broadcast request for device info
+        let request: DeviceInfoRequest = Default::default();
+        let request = serde_json::to_vec(&request)?;
+        let request = self.encrypt(request);
+        socket.send_to(&request, broadcast_address)?;
 
-    //     r := make(chan Device)
-
-    //     go func(s *net.UDPConn, request interface{}) {
-    //         for {
-    //             buff := make(Vec<u8>, 2048)
-    //             rlen, addr, err := s.ReadFromUDP(buff)
-    //             if err != nil {
-    //                 break
-    //             }
-    //             go c.discovered(r, addr, rlen, buff)
-    //         }
-    //     }(sock, request)
-
-    //     eJSON, err := json.Marshal(&request)
-    //     if err != nil {
-    //         return
-    //     }
-
-    //     var encrypted = c.encrypt(eJSON)
-    //     _, err = sock.WriteToUDP(encrypted, broadcastAddr)
-    //     if err != nil {
-    //         return
-    //     }
     //     started := time.Now()
     // Q:
     //     for {
@@ -170,106 +160,116 @@ impl HS110Client {
 
     // sendCommand is based on https://github.com/jaedle/golang-tplink-hs100
     fn send_command(&self, address: String, port: i64, command: Vec<u8>, timeout_seconds: u64) -> Result<Vec<u8>, Box<dyn Error>> {
-        conn, err := net.DialTimeout("tcp", address+":"+strconv.Itoa(port), time.Duration(timeoutSeconds)*time.Second)
-        if err != nil {
-            return nil, err
-        }
-        defer conn.Close()
+        // conn, err := net.DialTimeout("tcp", address+":"+strconv.Itoa(port), time.Duration(timeoutSeconds)*time.Second)
+        // if err != nil {
+        //     return nil, err
+        // }
+        // defer conn.Close()
 
-        writer := bufio.NewWriter(conn)
-        _, err = writer.Write(c.encryptWithHeader(command))
-        if err != nil {
-            return nil, err
-        }
-        writer.Flush()
+        // writer := bufio.NewWriter(conn)
+        // _, err = writer.Write(c.encryptWithHeader(command))
+        // if err != nil {
+        //     return nil, err
+        // }
+        // writer.Flush()
 
-        response, err := c.readHeader(conn)
-        if err != nil {
-            return nil, err
-        }
+        // response, err := c.readHeader(conn)
+        // if err != nil {
+        //     return nil, err
+        // }
 
-        payload, err := c.readPayload(conn, c.payloadLength(response))
-        if err != nil {
-            return nil, err
-        }
+        // payload, err := c.readPayload(conn, c.payloadLength(response))
+        // if err != nil {
+        //     return nil, err
+        // }
 
-        return c.decrypt(payload), nil
+        // return c.decrypt(payload), nil
+        Ok(vec![])
     }
 
     fn read_header(&self, conn net.Conn) -> Result<Vec<u8>, Box<dyn Error>> {
-        headerReader := io.LimitReader(conn, int64(HEADER_LENGTH))
-        let response = make(Vec<u8>, HEADER_LENGTH)
-        _, err := headerReader.Read(response)
-        return response, err
+        // headerReader := io.LimitReader(conn, int64(HEADER_LENGTH))
+        // let response = make(Vec<u8>, HEADER_LENGTH)
+        // _, err := headerReader.Read(response)
+        // return response, err
+        Ok(vec![])
     }
 
     fn read_payload(&self, conn net.Conn, length uint32) -> Result<Vec<u8>, Box<dyn Error>> {
-        payloadReader := io.LimitReader(conn, int64(length))
-        let payload = make(Vec<u8>, length)
-        _, err := payloadReader.Read(payload)
-        return payload, err
+        // payloadReader := io.LimitReader(conn, int64(length))
+        // let payload = make(Vec<u8>, length)
+        // _, err := payloadReader.Read(payload)
+        // return payload, err
+        Ok(vec![])
     }
 
     fn payload_length(&self, header: Vec<u8>) -> u32 {
-        payloadLength := binary.BigEndian.Uint32(header)
-        return payloadLength
+        // payloadLength := binary.BigEndian.Uint32(header)
+        // return payloadLength
+        0
     }
 
     const HEADER_LENGTH: u32 = 4;
 
     fn encrypt(&self, input: Vec<u8>) -> Vec<u8> {
-        s := string(input)
+        // s := string(input)
 
-        key := byte(0xAB)
-        b := make(Vec<u8>, len(s))
-        for i := 0; i < len(s); i++ {
-            b[i] = s[i] ^ key
-            key = b[i]
-        }
-        return b
+        // key := byte(0xAB)
+        // b := make(Vec<u8>, len(s))
+        // for i := 0; i < len(s); i++ {
+        //     b[i] = s[i] ^ key
+        //     key = b[i]
+        // }
+        // return b
+        vec![]
     }
 
     fn encrypt_with_header(&self, input: Vec<u8>) -> Vec<u8> {
-        s := string(input)
+        // s := string(input)
 
-        lengthPayload := len(s)
-        b := make(Vec<u8>, HEADER_LENGTH+lengthPayload)
-        copy(b[:HEADER_LENGTH], c.header(lengthPayload))
-        copy(b[HEADER_LENGTH:], c.encrypt(input))
-        return b
+        // lengthPayload := len(s)
+        // b := make(Vec<u8>, HEADER_LENGTH+lengthPayload)
+        // copy(b[:HEADER_LENGTH], c.header(lengthPayload))
+        // copy(b[HEADER_LENGTH:], c.encrypt(input))
+        // return b
+        vec![]
     }
 
     fn header(&self, length_payload: i64) -> Vec<u8> {
-        h := make(Vec<u8>, HEADER_LENGTH)
-        binary.BigEndian.PutUint32(h, uint32(lengthPayload))
-        return h
+        // h := make(Vec<u8>, HEADER_LENGTH)
+        // binary.BigEndian.PutUint32(h, uint32(lengthPayload))
+        // return h
+        vec![]
     }
 
     fn decrypt(&self, b: Vec<u8>) -> Vec<u8> {
-        k := byte(0xAB)
-        var newKey byte
-        for i := 0; i < len(b); i++ {
-            newKey = b[i]
-            b[i] = b[i] ^ k
-            k = newKey
-        }
+        // k := byte(0xAB)
+        // var newKey byte
+        // for i := 0; i < len(b); i++ {
+        //     newKey = b[i]
+        //     b[i] = b[i] ^ k
+        //     k = newKey
+        // }
 
-        return b
+        // return b
+        vec![]
     }
 
     fn decrypt_with_header(&self, b: Vec<u8>) -> Vec<u8> {
-        return c.decrypt(c.payload(b))
+        // return c.decrypt(c.payload(b))
+        vec![]
     }
 
     fn payload(&self, b: Vec<u8>) -> Vec<u8> {
-        return b[HEADER_LENGTH:]
+        // return b[HEADER_LENGTH:]
+        vec![]
     }
 
-    fn discovered(r chan Device, addr *net.UDPAddr, rlen int, buff Vec<u8>) {
-        r <- Device{
-            Addr: addr,
-            Data: c.decrypt(buff[:rlen]),
-        }
+    fn discovered(&self, tx: mpsc::Sender<Device>, addr: SocketAddr, rlen : usize, read_buffer: Vec<u8>) {
+        // r <- Device{
+        //     Addr: addr,
+        //     Data: c.decrypt(read_buffer[:rlen]),
+        // }
     }
 
     fn sanitize_samples(
@@ -308,7 +308,7 @@ impl HS110Client {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct SystemInfo  {
     #[serde(rename = "active_mode")]
 	mode :           String  ,
@@ -356,13 +356,13 @@ struct SystemInfo  {
 	updating      :  u8   ,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct System {
     #[serde(rename = "get_sysinfo")]
 	info:  SystemInfo,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct RealTimeEnergy {
     #[serde(rename = "err_code")]
 	error_code:          u8,
@@ -376,13 +376,13 @@ struct RealTimeEnergy {
 	total_watt_hour:      f64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct EMeter {
     #[serde(rename = "get_realtime")]
 	real_time: RealTimeEnergy,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct DeviceInfoRequest {
     #[serde(rename = "system")]
 	system: System,
@@ -393,14 +393,20 @@ struct DeviceInfoRequest {
 #[derive(Serialize, Deserialize, Debug)]
 struct DeviceInfoResponse {
     #[serde(rename = "system")]
+    #[serde(skip_serializing_if = "Option::is_none")]
 	system: Option<System>,
     #[serde(rename = "emeter")]
+    #[serde(skip_serializing_if = "Option::is_none")]
 	e_meter: Option<EMeter>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Device {
+  #[serde(rename = "addr")]
 	addr: SocketAddr,
+  #[serde(rename = "data")]
 	data: Vec<u8>,
+  #[serde(rename = "info")]
+  #[serde(skip_serializing_if = "Option::is_none")]
 	info: Option<DeviceInfoResponse>,
 }

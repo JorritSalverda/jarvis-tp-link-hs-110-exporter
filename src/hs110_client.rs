@@ -301,3 +301,38 @@ struct RealTimeEnergy {
     #[serde(rename = "total_wh")]
     total_watt_hour: f64,
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str;
+
+    #[test]
+    fn encrypt_device_info_request() {
+        let hs110_client = HS110Client::new(HS110ClientConfig::new(2).unwrap());
+        let request: DeviceInfoRequest = Default::default();
+        let request = serde_json::to_vec(&request).unwrap();
+        assert_eq!("{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}", str::from_utf8(&request).unwrap());
+  
+        // act
+        let request = hs110_client.encrypt(request);
+  
+        assert_eq!(b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\uf536Ѵ\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8ʭȼ\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2", request.to_string());
+    }
+
+    #[test]
+    fn decrypt_device_info_request() {
+        let hs110_client = HS110Client::new(HS110ClientConfig::new(2).unwrap());
+  
+        let response = b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\uf536Ѵ\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8ʭȼ\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2";
+
+        // act
+        let response = hs110_client.decrypt(response);
+
+        assert_eq!("{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}", str::from_utf8(&response).unwrap());
+        let response = serde_json::from_slice(&response).unwrap();
+
+        assert_eq!(DeviceInfoRequest{..Default::default()}, response);
+    }
+}

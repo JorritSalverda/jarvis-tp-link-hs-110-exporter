@@ -1,8 +1,8 @@
 mod bigquery_client;
 mod config_client;
 mod exporter_service;
-mod model;
 mod hs110_client;
+mod model;
 mod state_client;
 
 use bigquery_client::{BigqueryClient, BigqueryClientConfig};

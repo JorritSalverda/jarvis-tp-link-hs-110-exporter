@@ -31,13 +31,15 @@ impl ConfigClient {
     }
 
     pub fn read_config_from_file(&self) -> Result<Config, Box<dyn Error>> {
-
         println!("Loading config from {}...", &self.config.config_path);
 
         let config_file_contents = fs::read_to_string(&self.config.config_path)?;
         let config: Config = serde_yaml::from_str(&config_file_contents)?;
 
-        println!("Loaded config from {}: {:?}", &self.config.config_path, &config);
+        println!(
+            "Loaded config from {}: {:?}",
+            &self.config.config_path, &config
+        );
 
         Ok(config)
     }
@@ -46,7 +48,7 @@ impl ConfigClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{EntityType};
+    use crate::model::EntityType;
 
     #[test]
     fn read_config_from_file_returns_deserialized_test_file() {
@@ -57,9 +59,6 @@ mod tests {
 
         assert_eq!(config.location, "My Home".to_string());
         assert_eq!(config.entity_type, EntityType::Device);
-        assert_eq!(
-            config.entity_name,
-            "TP-Link HS110".to_string()
-        );
+        assert_eq!(config.entity_name, "TP-Link HS110".to_string());
     }
 }

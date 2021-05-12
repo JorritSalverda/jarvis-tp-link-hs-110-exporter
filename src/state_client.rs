@@ -68,13 +68,14 @@ impl StateClient {
     }
 
     pub fn read_state(&self) -> Result<Option<Measurement>, Box<dyn std::error::Error>> {
+        println!(
+            "Reading previous measurement from state file at {}...",
+            &self.config.measurement_file_path
+        );
 
-        println!("Reading previous measurement from state file at {}...", &self.config.measurement_file_path);
-
-        let state_file_contents = match fs::read_to_string(&self.config.measurement_file_path)
-        {
-          Ok(c) => c,
-          Err(_) => return Ok(Option::None),
+        let state_file_contents = match fs::read_to_string(&self.config.measurement_file_path) {
+            Ok(c) => c,
+            Err(_) => return Ok(Option::None),
         };
 
         let last_measurement: Option<Measurement> = match serde_yaml::from_str(&state_file_contents)
@@ -128,8 +129,10 @@ impl StateClient {
         &self,
         measurement: &Measurement,
     ) -> Result<(), Box<dyn std::error::Error>> {
-
-        println!("Storing last measurement in configmap {}...", &self.config.measurement_file_configmap_name);
+        println!(
+            "Storing last measurement in configmap {}...",
+            &self.config.measurement_file_configmap_name
+        );
 
         // retrieve configmap
         let mut config_map = self.get_state_configmap().await?;

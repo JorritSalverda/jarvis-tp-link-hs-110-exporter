@@ -5,7 +5,7 @@ labels:
 version:
   semver:
     major: 0
-    minor: 1
+    minor: 2
 
 stages:
   build-lint-and-package:

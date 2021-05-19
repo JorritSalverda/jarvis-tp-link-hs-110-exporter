@@ -8,6 +8,7 @@ cronjob:
   p1USBDevicePath: /dev/ttyUSB0
   failedJobsHistoryLimit: 1
   successfulJobsHistoryLimit: 2
+  ttlSecondsAfterFinished: 3600
 
 config:
   timeoutSeconds: 10

@@ -2,7 +2,7 @@ use std::env;
 use std::error::Error;
 use std::{thread, time};
 
-use crate::model::Measurement;
+use jarvis_lib::Measurement;
 use gcp_bigquery_client::model::table::Table;
 use gcp_bigquery_client::model::table_data_insert_all_request::TableDataInsertAllRequest;
 use gcp_bigquery_client::model::table_field_schema::TableFieldSchema;

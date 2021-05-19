@@ -1,4 +1,5 @@
-use crate::model::{Config, Measurement, MetricType, Sample, SampleType};
+use crate::model::Config;
+use jarvis_lib::{Measurement, MetricType, Sample, SampleType};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -307,7 +308,8 @@ struct RealTimeEnergy {
 mod tests {
     use super::*;
     use std::str;
-    use crate::model::{Config, EntityType};
+    use crate::model::Config;
+    use jarvis_lib::EntityType;
 
     #[test]
     fn encrypt_device_info_request() {

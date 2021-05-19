@@ -1,4 +1,4 @@
-use crate::model::Measurement;
+use jarvis_lib::Measurement;
 
 use k8s_openapi::api::core::v1::ConfigMap;
 use kube::{
@@ -176,7 +176,7 @@ impl StateClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{EntityType, MetricType, SampleType};
+    use jarvis_lib::{EntityType,SampleType,MetricType};
     use chrono::DateTime;
 
     #[tokio::test]

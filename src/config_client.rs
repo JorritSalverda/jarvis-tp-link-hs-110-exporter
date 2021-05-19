@@ -48,7 +48,7 @@ impl ConfigClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::EntityType;
+    use jarvis_lib::EntityType;
 
     #[test]
     fn read_config_from_file_returns_deserialized_test_file() {

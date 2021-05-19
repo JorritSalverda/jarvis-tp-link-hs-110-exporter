@@ -6,6 +6,8 @@ cronjob:
   schedule: '*/5 * * * *'
   concurrencyPolicy: Forbid
   p1USBDevicePath: /dev/ttyUSB0
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 2
 
 config:
   timeoutSeconds: 10

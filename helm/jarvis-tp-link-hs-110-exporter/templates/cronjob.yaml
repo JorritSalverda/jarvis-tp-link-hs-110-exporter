@@ -7,8 +7,8 @@ metadata:
 spec:
   schedule: {{ .Values.cronjob.schedule | quote }}
   concurrencyPolicy: {{ .Values.cronjob.concurrencyPolicy }}
-  failedJobsHistoryLimit: 1
-  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: {{ .Values.cronjob.failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ .Values.cronjob.successfulJobsHistoryLimit }}
   suspend: false
   jobTemplate:
     spec:

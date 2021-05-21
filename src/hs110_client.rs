@@ -1,5 +1,6 @@
 use crate::model::Config;
-use jarvis_lib::{Measurement, MetricType, Sample, SampleType};
+use jarvis_lib::measurement_client::MeasurementClient;
+use jarvis_lib::model::{Measurement, MetricType, Sample, SampleType};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -36,12 +37,8 @@ pub struct HS110Client {
     config: HS110ClientConfig,
 }
 
-impl HS110Client {
-    pub fn new(config: HS110ClientConfig) -> Self {
-        Self { config }
-    }
-
-    pub fn get_measurement(
+impl MeasurementClient<Config> for HS110Client {
+    fn get_measurement(
         &self,
         config: Config,
         last_measurement: Option<Measurement>,
@@ -102,6 +99,12 @@ impl HS110Client {
 
         Ok(measurement)
     }
+}
+
+impl HS110Client {
+    pub fn new(config: HS110ClientConfig) -> Self {
+        Self { config }
+    }
 
     fn discover_devices(&self) -> Result<Vec<DeviceInfoResponse>, Box<dyn Error>> {
         // init udp socket
@@ -149,23 +152,23 @@ impl HS110Client {
         let mut key = b"\xab"[0];
         let mut output: Vec<u8> = vec![0; input.len()];
         for (i, item) in input.iter().enumerate() {
-          output[i] = item ^ key;
-          key = output[i];
+            output[i] = item ^ key;
+            key = output[i];
         }
 
         output
     }
 
     fn decrypt(&self, input: Vec<u8>) -> Vec<u8> {
-      let mut key = b"\xab"[0];
-      let mut output: Vec<u8> = vec![0; input.len()];
-      for (i, item) in input.iter().enumerate() {
-        let new_key = *item;
-        output[i] = item ^ key;
-        key = new_key;
-      }
+        let mut key = b"\xab"[0];
+        let mut output: Vec<u8> = vec![0; input.len()];
+        for (i, item) in input.iter().enumerate() {
+            let new_key = *item;
+            output[i] = item ^ key;
+            key = new_key;
+        }
 
-      output
+        output
     }
 
     fn sanitize_samples(
@@ -307,33 +310,39 @@ struct RealTimeEnergy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str;
     use crate::model::Config;
-    use jarvis_lib::EntityType;
+    use jarvis_lib::model::EntityType;
+    use std::str;
 
     #[test]
     fn encrypt_device_info_request() {
         let hs110_client = HS110Client::new(HS110ClientConfig::new(2).unwrap());
         let request: DeviceInfoRequest = Default::default();
         let request = serde_json::to_vec(&request).unwrap();
-        assert_eq!("{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}", str::from_utf8(&request).unwrap());
-  
+        assert_eq!(
+            "{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}",
+            str::from_utf8(&request).unwrap()
+        );
+
         // act
         let request = hs110_client.encrypt(request);
-  
+
         assert_eq!(b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\xef\x94\xb6\xd1\xb4\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8\xca\xad\xc8\xbc\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2".to_vec(), request);
     }
 
     #[test]
     fn decrypt_device_info_request() {
         let hs110_client = HS110Client::new(HS110ClientConfig::new(2).unwrap());
-  
+
         let response = b"\xd0\xf2\x81\xf8\x8b\xff\x9a\xf7\xd5\xef\x94\xb6\xd1\xb4\xc0\x9f\xec\x95\xe6\x8f\xe1\x87\xe8\xca\xf0\x8b\xf6\x8b\xa7\x85\xe0\x8d\xe8\x9c\xf9\x8b\xa9\x93\xe8\xca\xad\xc8\xbc\xe3\x91\xf4\x95\xf9\x8d\xe4\x89\xec\xce\xf4\x8f\xf2\x8f\xf2".to_vec();
 
         // act
         let response = hs110_client.decrypt(response);
 
-        assert_eq!("{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}", str::from_utf8(&response).unwrap());
+        assert_eq!(
+            "{\"system\":{\"get_sysinfo\":{}},\"emeter\":{\"get_realtime\":{}}}",
+            str::from_utf8(&response).unwrap()
+        );
         let response: DeviceInfoRequest = serde_json::from_slice(&response).unwrap();
 
         assert_eq!("".to_string(), response.system.info.alias);
@@ -343,10 +352,10 @@ mod tests {
     #[ignore]
     fn get_measurement() {
         let hs110_client = HS110Client::new(HS110ClientConfig::new(10).unwrap());
-        let config = Config{
-          location: "My Home".to_string(),
-          entity_type: EntityType::Device,
-          entity_name: "TP-Link HS110".to_string(),
+        let config = Config {
+            location: "My Home".to_string(),
+            entity_type: EntityType::Device,
+            entity_name: "TP-Link HS110".to_string(),
         };
 
         // act

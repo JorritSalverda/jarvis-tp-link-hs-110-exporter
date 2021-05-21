@@ -29,13 +29,13 @@ stages:
     repoUrl: https://helm.jorritsalverda.com/
 
   bake:
-    image: extensions/docker:stable
+    image: extensions/docker:dev
     action: build
     repositories:
     - jsalverda
 
   push-to-docker-hub:
-    image: extensions/docker:stable
+    image: extensions/docker:dev
     action: push
     repositories:
     - jsalverda

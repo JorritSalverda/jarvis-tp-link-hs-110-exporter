@@ -25,7 +25,7 @@ impl HS110ClientConfig {
 
     pub fn from_env() -> Result<Self, Box<dyn Error>> {
         let timeout_seconds: u64 = env::var("TIMEOUT_SECONDS")
-            .unwrap_or("10".to_string())
+            .unwrap_or_else(|_| "10".to_string())
             .parse()?;
 
         Self::new(timeout_seconds)
@@ -87,11 +87,8 @@ impl MeasurementClient<Config> for HS110Client {
             }
         }
 
-        match last_measurement {
-            Some(lm) => {
-                measurement.samples = self.sanitize_samples(measurement.samples, lm.samples)
-            }
-            None => {}
+        if let Some(lm) = last_measurement {
+            measurement.samples = self.sanitize_samples(measurement.samples, lm.samples)
         }
 
         println!("Read measurement from hs-110 devices");
@@ -110,7 +107,7 @@ impl HS110Client {
         let broadcast_address: SocketAddr = "255.255.255.255:9999".parse()?;
         let from_address: SocketAddr = "0.0.0.0:8755".parse()?;
         let socket = UdpSocket::bind(from_address)?;
-        socket.set_read_timeout(Some(Duration::new(self.config.timeout_seconds.clone(), 0)))?;
+        socket.set_read_timeout(Some(Duration::new(self.config.timeout_seconds, 0)))?;
         socket.set_broadcast(true)?;
 
         // broadcast request for device info
@@ -123,7 +120,7 @@ impl HS110Client {
         let mut read_buffer: Vec<u8> = vec![0; 2048];
         let mut devices = Vec::new();
         let start = Instant::now();
-        let timeout = Duration::new(self.config.timeout_seconds.clone(), 0);
+        let timeout = Duration::new(self.config.timeout_seconds, 0);
 
         while let Ok((number_of_bytes, src_addr)) = socket.recv_from(&mut read_buffer) {
             println!(

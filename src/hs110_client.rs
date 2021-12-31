@@ -4,7 +4,6 @@ use jarvis_lib::model::{Measurement, MetricType, Sample, SampleType};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::env;
 use std::error::Error;
 use std::net::{SocketAddr, UdpSocket};

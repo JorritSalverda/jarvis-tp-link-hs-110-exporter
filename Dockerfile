@@ -1,31 +1,27 @@
-# from https://www.lpalmieri.com/posts/fast-rust-docker-builds/
-FROM rust:1.52 as planner
+FROM rust:1.57 as chef
+ENV CARGO_TERM_COLOR=always
 WORKDIR /app
+RUN cargo install cargo-chef
 RUN apt-get update && apt-get install -y --no-install-recommends musl-tools
 RUN rustup target add x86_64-unknown-linux-musl
-RUN cargo install cargo-chef --version 0.1.20
-COPY . .
-RUN cargo chef prepare  --recipe-path recipe.json
+RUN rustup component add clippy
 
-FROM rust:1.52 as cacher
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends musl-tools
-RUN rustup target add x86_64-unknown-linux-musl
-RUN cargo install cargo-chef --version 0.1.20
+FROM chef as planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef as builder
 COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
-
-FROM rust:1.52 as builder
-RUN apt-get update && apt-get install -y --no-install-recommends musl-tools
-RUN rustup target add x86_64-unknown-linux-musl
-WORKDIR /app
+# Build application
 COPY . .
-COPY --from=cacher /app/target target
-COPY --from=cacher /usr/local/cargo /usr/local/cargo
-RUN cargo test --release --target x86_64-unknown-linux-musl
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --verbose --release --target x86_64-unknown-linux-musl
+RUN cargo clippy --release --target x86_64-unknown-linux-musl --no-deps -- --deny "warnings"
+RUN cargo test --verbose --release --target x86_64-unknown-linux-musl
 
 FROM scratch AS runtime
+USER 1000
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/jarvis-tp-link-hs-110-exporter .
 ENTRYPOINT ["./jarvis-tp-link-hs-110-exporter"]

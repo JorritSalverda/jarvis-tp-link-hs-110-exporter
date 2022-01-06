@@ -12,18 +12,12 @@ cronjob:
 
 config:
   timeoutSeconds: 10
-  bqEnable: false
-  bqInit: true
-  bqProjectID: gcp-project-id
-  bqDataset: jarvis
-  bqTable: jarvis_measurements
+  natsHost: jarvis-nats
+  natsSubject: jarvis-measurements
   configYaml: |
     location: My Home
     entityType: ENTITY_TYPE_DEVICE
     entityName: TP-Link HS110
-
-secret:
-  gcpServiceAccountKeyfile: '{}'
 
 logFormat: json
 

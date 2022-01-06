@@ -48,35 +48,18 @@ spec:
                 configMapKeyRef:
                   key: timeout-seconds
                   name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-            - name: BQ_ENABLE
-              valueFrom:
-                configMapKeyRef:
-                  key: bq-enable
-                  name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-            - name: BQ_INIT
-              valueFrom:
-                configMapKeyRef:
-                  key: bq-init
-                  name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-            - name: BQ_PROJECT_ID
+            - name: NATS_HOST
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-                  key: bq-project-id
-            - name: BQ_DATASET
+                  key: nats-host
+            - name: NATS_SUBJECT
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-                  key: bq-dataset
-            - name: BQ_TABLE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-                  key: bq-table
+                  key: nats-subject
             - name: MEASUREMENT_FILE_CONFIG_MAP_NAME
               value: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /secrets/keyfile.json
             ports:
             - name: udp
               containerPort: 8755
@@ -86,8 +69,6 @@ spec:
             volumeMounts:
             - name: configs
               mountPath: /configs
-            - name: secrets
-              mountPath: /secrets
           {{- with .Values.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}
@@ -106,7 +87,3 @@ spec:
           - name: configs
             configMap:
               name: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}
-          - name: secrets
-            secret:
-              defaultMode: 420
-              secretName: {{ include "jarvis-tp-link-hs-110-exporter.fullname" . }}

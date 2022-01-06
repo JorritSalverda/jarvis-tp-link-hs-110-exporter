@@ -82,6 +82,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
           terminationGracePeriodSeconds: 300
           volumes:
           - name: configs

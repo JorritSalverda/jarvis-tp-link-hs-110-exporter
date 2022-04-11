@@ -2,9 +2,9 @@ mod hs110_client;
 mod model;
 
 use hs110_client::{HS110Client, HS110ClientConfig};
-use jarvis_lib::nats_client::{NatsClient, NatsClientConfig};
 use jarvis_lib::config_client::{ConfigClient, ConfigClientConfig};
 use jarvis_lib::exporter_service::{ExporterService, ExporterServiceConfig};
+use jarvis_lib::nats_client::{NatsClient, NatsClientConfig};
 use jarvis_lib::state_client::{StateClient, StateClientConfig};
 
 #[tokio::main]

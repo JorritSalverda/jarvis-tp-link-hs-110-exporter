@@ -3,6 +3,7 @@ use jarvis_lib::measurement_client::MeasurementClient;
 use jarvis_lib::model::{Measurement, MetricType, Sample, SampleType};
 
 use chrono::Utc;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -16,7 +17,7 @@ pub struct HS110ClientConfig {
 
 impl HS110ClientConfig {
     pub fn new(timeout_seconds: u64) -> Result<Self, Box<dyn Error>> {
-        println!(
+        debug!(
             "HS110ClientConfig::new(timeout_seconds: {})",
             timeout_seconds
         );
@@ -42,7 +43,7 @@ impl MeasurementClient<Config> for HS110Client {
         config: Config,
         last_measurement: Option<Measurement>,
     ) -> Result<Measurement, Box<dyn Error>> {
-        println!("Reading measurement from hs-110 devices...");
+        info!("Reading measurement from hs-110 devices...");
 
         let mut measurement = Measurement {
             id: Uuid::new_v4().to_string(),
@@ -52,7 +53,7 @@ impl MeasurementClient<Config> for HS110Client {
             measured_at_time: Utc::now(),
         };
 
-        println!("Discovering devices...");
+        info!("Discovering devices...");
         let devices = self.discover_devices()?;
 
         for device in devices.iter() {
@@ -91,7 +92,7 @@ impl MeasurementClient<Config> for HS110Client {
             measurement.samples = self.sanitize_samples(measurement.samples, lm.samples)
         }
 
-        println!("Read measurement from hs-110 devices");
+        info!("Read measurement from hs-110 devices");
 
         Ok(measurement)
     }
@@ -123,7 +124,7 @@ impl HS110Client {
         let timeout = Duration::new(self.config.timeout_seconds, 0);
 
         while let Ok((number_of_bytes, src_addr)) = socket.recv_from(&mut read_buffer) {
-            println!(
+            debug!(
                 "Received {} bytes from address {}",
                 number_of_bytes, src_addr
             );
@@ -132,7 +133,7 @@ impl HS110Client {
             let response = self.decrypt(response);
             let response: DeviceInfoResponse = serde_json::from_slice(&response)?;
 
-            println!("{:#?}", &response);
+            info!("{:#?}", &response);
 
             devices.push(response);
 
@@ -188,7 +189,7 @@ impl HS110Client {
                         && current_sample.value / last_sample.value > 1.1
                     {
                         sanitize = true;
-                        println!("Value for {} is more than 10 percent larger than the last sampled value {}, keeping previous value instead", current_sample.sample_name, last_sample.value);
+                        info!("Value for {} is more than 10 percent larger than the last sampled value {}, keeping previous value instead", current_sample.sample_name, last_sample.value);
                         sanitized_samples.push(last_sample.clone());
                     }
 

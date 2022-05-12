@@ -9,6 +9,8 @@ use jarvis_lib::state_client::{StateClient, StateClientConfig};
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    json_env_logger::init();
+
     let hs110_client_config = HS110ClientConfig::from_env()?;
     let hs110_client = HS110Client::new(hs110_client_config);
 
@@ -27,7 +29,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         state_client,
         Box::new(hs110_client),
     )?;
-    let exporter_service = ExporterService::new(exporter_service_config);
+    let mut exporter_service = ExporterService::new(exporter_service_config);
 
     exporter_service.run().await?;
 

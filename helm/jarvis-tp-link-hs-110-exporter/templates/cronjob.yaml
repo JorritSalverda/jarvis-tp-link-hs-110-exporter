@@ -41,8 +41,8 @@ spec:
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             imagePullPolicy: {{ .Values.image.pullPolicy }}    
             env:
-            - name: ESTAFETTE_LOG_FORMAT
-              value: {{ .Values.logFormat }}
+            - name: RUST_LOG
+              value: {{ .Values.logLevel }}
             - name: TIMEOUT_SECONDS
               valueFrom:
                 configMapKeyRef:

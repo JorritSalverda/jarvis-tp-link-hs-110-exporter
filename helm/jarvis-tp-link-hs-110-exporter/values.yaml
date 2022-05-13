@@ -19,7 +19,7 @@ config:
     entityType: ENTITY_TYPE_DEVICE
     entityName: TP-Link HS110
 
-logFormat: json
+logLevel: debug
 
 image:
   repository: jsalverda/jarvis-tp-link-hs-110-exporter

@@ -3,12 +3,12 @@ use jarvis_lib::measurement_client::MeasurementClient;
 use jarvis_lib::model::{Measurement, MetricType, Sample, SampleType};
 
 use chrono::Utc;
-use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, Instant};
+use tracing::{debug, info};
 use uuid::Uuid;
 
 pub struct HS110ClientConfig {
@@ -38,12 +38,12 @@ pub struct HS110Client {
 }
 
 impl MeasurementClient<Config> for HS110Client {
-    fn get_measurement(
+    fn get_measurements(
         &self,
         config: Config,
-        last_measurement: Option<Measurement>,
-    ) -> Result<Measurement, Box<dyn Error>> {
-        info!("Reading measurement from hs-110 devices...");
+        last_measurements: Option<Vec<Measurement>>,
+    ) -> Result<Vec<Measurement>, Box<dyn Error>> {
+        info!("Reading measurements from hs-110 devices...");
 
         let mut measurement = Measurement {
             id: Uuid::new_v4().to_string(),
@@ -88,13 +88,16 @@ impl MeasurementClient<Config> for HS110Client {
             }
         }
 
-        if let Some(lm) = last_measurement {
-            measurement.samples = self.sanitize_samples(measurement.samples, lm.samples)
+        if let Some(lm) = last_measurements {
+            if !lm.is_empty() {
+                measurement.samples =
+                    self.sanitize_samples(measurement.samples, &lm[lm.len() - 1].samples)
+            }
         }
 
         info!("Read measurement from hs-110 devices");
 
-        Ok(measurement)
+        Ok(vec![measurement])
     }
 }
 
@@ -171,7 +174,7 @@ impl HS110Client {
     fn sanitize_samples(
         &self,
         current_samples: Vec<Sample>,
-        last_samples: Vec<Sample>,
+        last_samples: &[Sample],
     ) -> Vec<Sample> {
         let mut sanitized_samples: Vec<Sample> = Vec::new();
 
@@ -356,8 +359,9 @@ mod tests {
         };
 
         // act
-        let measurement = hs110_client.get_measurement(config, Option::None).unwrap();
+        let measurements = hs110_client.get_measurements(config, Option::None).unwrap();
 
-        assert_eq!(40, measurement.samples.len());
+        assert_eq!(1, measurements.len());
+        assert_eq!(40, measurements[0].samples.len());
     }
 }

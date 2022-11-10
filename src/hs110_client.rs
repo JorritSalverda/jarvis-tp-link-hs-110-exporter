@@ -189,10 +189,10 @@ impl HS110Client {
                     && current_sample.metric_type == last_sample.metric_type
                 {
                     if current_sample.metric_type == MetricType::Counter
-                        && current_sample.value / last_sample.value > 1.1
+                        && current_sample.value / last_sample.value > 1.5
                     {
                         sanitize = true;
-                        info!("Value for {} is more than 10 percent larger than the last sampled value {}, keeping previous value instead", current_sample.sample_name, last_sample.value);
+                        info!("Value for {} is more than 50 percent larger than the last sampled value {}, keeping previous value instead", current_sample.sample_name, last_sample.value);
                         sanitized_samples.push(last_sample.clone());
                     }
 

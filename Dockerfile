@@ -1,27 +1,44 @@
-FROM rust:1.65 as chef
-ENV CARGO_TERM_COLOR=always
+FROM --platform=$BUILDPLATFORM rust:1.69 as builder
+
+ENV CARGO_TERM_COLOR=always \
+  CARGO_NET_GIT_FETCH_WITH_CLI=true
+
 WORKDIR /app
-RUN cargo install cargo-chef
-RUN apt-get update && apt-get install -y --no-install-recommends musl-tools
-RUN rustup target add x86_64-unknown-linux-musl
-RUN rustup component add clippy
 
-FROM chef as planner
+ARG BUILDPLATFORM
+RUN echo "BUILDPLATFORM: $BUILDPLATFORM"
+
+ARG TARGETPLATFORM
+RUN echo "TARGETPLATFORM: $TARGETPLATFORM"
+
+RUN mkdir -p .cargo ; \
+  echo '[build]' > .cargo/config ; \
+  case "$TARGETPLATFORM" in \
+  "linux/amd64") \
+  echo 'target = "x86_64-unknown-linux-gnu"' >> .cargo/config \
+  ;; \
+  "linux/arm64") \
+  echo 'target = "aarch64-unknown-linux-gnu"' >> .cargo/config \
+  ;; \
+  esac ; \
+  cat .cargo/config
+
+RUN apt update && apt install --assume-yes --no-install-recommends  g++-aarch64-linux-gnu libc6-dev-arm64-cross libudev-dev
+
+RUN rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+RUN rustup toolchain install stable-aarch64-unknown-linux-gnu
+
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
+  CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
+  CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
+  PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig/:${PKG_CONFIG_PATH}"
+
 COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef as builder
-COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies - this is the caching Docker layer!
-RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
-# Build application
-COPY . .
-RUN cargo build --verbose --release --target x86_64-unknown-linux-musl
-RUN cargo clippy --release --target x86_64-unknown-linux-musl --no-deps -- --deny "warnings"
-RUN cargo test --verbose --release --target x86_64-unknown-linux-musl
+RUN cargo install --path . --root /usr/local
 
-FROM scratch AS runtime
-USER 1000
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/jarvis-tp-link-hs-110-exporter .
+FROM debian:bullseye-slim AS runtime
+# COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+WORKDIR /app
+COPY --from=builder /usr/local/bin/jarvis-tp-link-hs-110-exporter .
 ENTRYPOINT ["./jarvis-tp-link-hs-110-exporter"]

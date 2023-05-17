@@ -16,5 +16,5 @@ serde_json = "1.0"
 tokio = { version = "1.28", features = ["rt", "rt-multi-thread", "macros"] }
 uuid = { version = "1.1", features = ["v4"] }
 jarvis-lib = { git = "https://github.com/JorritSalverda/jarvis-lib", tag = "0.1.65" }
-kube = { version = "0.82", default-features = false, features = ["client", "runtime", "derive"] }
+kube = "0.82"
 openssl = { version = "0.10", features = ["vendored"] }
